@@ -1,21 +1,13 @@
 version: 2
 updates:
-  # Dockerfile Base-Images
+  # Prüft wöchentlich auf Updates im Dockerfile (z. B. Base-Image debian)
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "daily"
-    groups:
-      docker-dependencies:
-        patterns:
-          - "*"
 
-  # Cargo Crates (Rust)
+  # Prüft wöchentlich auf Updates in deinen Rust Crates (Cargo.toml)
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "daily"
-    groups:
-      cargo-dependencies:
-        patterns:
-          - "*"
