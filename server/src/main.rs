@@ -429,7 +429,7 @@ async fn app_main() -> Result<()> {
                     }
                 });
             }
-
+        }
         for (i, grab) in config.snatchlist.iter().enumerate() {
             let i = i + config.autograbs.len();
             let config = config.clone();
