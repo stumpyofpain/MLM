@@ -38,7 +38,7 @@ use figment::{
     Figment,
     providers::{Env, Format, Toml},
 };
-use mlm_mam::api::MaM;
+use mlm_mam::api::{AccountBlockedError, MaM};
 use stats::{Stats, Triggers};
 use time::OffsetDateTime;
 use tokio::{
@@ -54,7 +54,7 @@ use tracing_subscriber::{
     util::SubscriberInitExt as _,
 };
 use web::start_webserver;
-
+use tracing::{Level, debug, enabled, error, info, instrument, trace, warn};
 use crate::{
     config::Config,
     linker::link_torrents_to_library,
