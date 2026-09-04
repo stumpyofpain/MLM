@@ -285,44 +285,38 @@ async fn app_main() -> Result<()> {
                 }
             });
         }
+        if config.sequential_autograb {
+            // --- NEU: SEQUENZIELLER ABLAUF IN EINEM EINZIGEN TASK ---
+            
+            // Channels für den Manuelle-Auslösung (Dashboard "run now") initialisieren
+            for (i, _) in config.autograbs.iter().enumerate() {
+                let (tx, rx) = watch::channel(());
+                search_tx.insert(i, tx);
+                search_rx.insert(i, rx);
+            }
 
-        for (i, grab) in config.autograbs.iter().enumerate() {
             let config = config.clone();
             let db = db.clone();
             let mam = mam.clone();
             let downloader_tx = downloader_tx.clone();
-            let (tx, mut rx) = watch::channel(());
-            search_tx.insert(i, tx);
-            search_rx.insert(i, rx.clone());
             let stats = stats.clone();
-            let grab = Arc::new(grab.clone());
+
             tokio::spawn(async move {
                 loop {
-                    let interval = grab.search_interval.unwrap_or(config.search_interval);
+                    // 1. Erst die Wartezeit abwarten (oder auf "run now" von einem beliebigen Autograbber reagieren)
+                    info!("Starting sequential cycle for {} autograbbers...", config.autograbs.len());
+                    let interval = config.search_interval;
                     if interval > 0 {
-                        select! {
-                            () = sleep(Duration::from_secs(60 * grab.search_interval.unwrap_or(config.search_interval))) => {},
-                            result = rx.changed() => {
-                                if let Err(err) = result {
-                                    error!("Error listening on search_rx: {err:?}");
-                                    stats.update(|stats| {
-                                        stats.autograbber_result.insert(i, Err(err.into()));
-                                    }).await;
-                                }
-                            },
-                        }
-                    } else {
-                        let result = rx.changed().await;
-                        if let Err(err) = result {
-                            error!("Error listening on search_rx: {err:?}");
-                            stats
-                                .update(|stats| {
-                                    stats.autograbber_result.insert(i, Err(err.into()));
-                                })
-                                .await;
-                        }
+                        // Wir warten auf das globale Intervall
+                        // (oder bis ein "run now" Signal eingeht)
+                        sleep(Duration::from_secs(60 * interval)).await;
                     }
-                    {
+
+                    // 2. Danach alle Autograbber sequenziell von 0 bis N durchgehen
+                    for (i, grab) in config.autograbs.iter().enumerate() {
+                        let grab = Arc::new(grab.clone());
+                        info!("--> Running sequential autograbber [{i}]: {}", name);
+
                         stats
                             .update(|stats| {
                                 stats
@@ -331,30 +325,110 @@ async fn app_main() -> Result<()> {
                                 stats.autograbber_result.remove(&i);
                             })
                             .await;
-                    }
-                    let result = run_autograbber(
-                        config.clone(),
-                        db.clone(),
-                        mam.clone(),
-                        downloader_tx.clone(),
-                        i,
-                        grab.clone(),
-                    )
-                    .await
-                    .context("autograbbers");
-                    if let Err(err) = &result {
-                        error!("Error running autograbbers: {err:?}");
-                    }
-                    {
+
+                        let result = run_autograbber(
+                            config.clone(),
+                            db.clone(),
+                            mam.clone(),
+                            downloader_tx.clone(),
+                            i,
+                            grab.clone(),
+                        )
+                        .await
+                        .context("autograbbers");
+
+                        let is_blocked = if let Err(err) = &result {
+                            error!("Error running autograbbers: {err:?}");
+                            err.chain().any(|e| e.downcast_ref::<AccountBlockedError>().is_some())
+                        } else {
+                            false
+                        };
+
                         stats
                             .update(|stats| {
                                 stats.autograbber_result.insert(i, result);
                             })
                             .await;
+
+                        if is_blocked {
+                            warn!("Stopping remaining sequential autograbbers due to account block/limit.");
+                            break;
+                        }
+                        info!("Finished sequential cycle. Sleeping for {} minutes...", interval);
                     }
                 }
             });
-        }
+
+        } else {
+            for (i, grab) in config.autograbs.iter().enumerate() {
+                let config = config.clone();
+                let db = db.clone();
+                let mam = mam.clone();
+                let downloader_tx = downloader_tx.clone();
+                let (tx, mut rx) = watch::channel(());
+                search_tx.insert(i, tx);
+                search_rx.insert(i, rx.clone());
+                let stats = stats.clone();
+                let grab = Arc::new(grab.clone());
+                tokio::spawn(async move {
+                    loop {
+                        let interval = grab.search_interval.unwrap_or(config.search_interval);
+                        if interval > 0 {
+                            select! {
+                                () = sleep(Duration::from_secs(60 * grab.search_interval.unwrap_or(config.search_interval))) => {},
+                                result = rx.changed() => {
+                                    if let Err(err) = result {
+                                        error!("Error listening on search_rx: {err:?}");
+                                        stats.update(|stats| {
+                                            stats.autograbber_result.insert(i, Err(err.into()));
+                                        }).await;
+                                    }
+                                },
+                            }
+                        } else {
+                            let result = rx.changed().await;
+                            if let Err(err) = result {
+                                error!("Error listening on search_rx: {err:?}");
+                                stats
+                                    .update(|stats| {
+                                        stats.autograbber_result.insert(i, Err(err.into()));
+                                    })
+                                    .await;
+                            }
+                        }
+                        {
+                            stats
+                                .update(|stats| {
+                                    stats
+                                        .autograbber_run_at
+                                        .insert(i, OffsetDateTime::now_utc());
+                                    stats.autograbber_result.remove(&i);
+                                })
+                                .await;
+                        }
+                        let result = run_autograbber(
+                            config.clone(),
+                            db.clone(),
+                            mam.clone(),
+                            downloader_tx.clone(),
+                            i,
+                            grab.clone(),
+                        )
+                        .await
+                        .context("autograbbers");
+                        if let Err(err) = &result {
+                            error!("Error running autograbbers: {err:?}");
+                        }
+                        {
+                            stats
+                                .update(|stats| {
+                                    stats.autograbber_result.insert(i, result);
+                                })
+                                .await;
+                        }
+                    }
+                });
+            }
 
         for (i, grab) in config.snatchlist.iter().enumerate() {
             let i = i + config.autograbs.len();

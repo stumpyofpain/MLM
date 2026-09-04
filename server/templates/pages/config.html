@@ -18,6 +18,7 @@
     <span class=key>search_interval</span> = <span class=num>{{ config.search_interval }}</span><br>
     <span class=key>link_interval</span> = <span class=num>{{ config.link_interval }}</span><br>
     <span class=key>import_interval</span> = <span class=num>{{ config.import_interval }}</span><br>
+    <span class=key>sequential_autograb</span> = <span class=num>{{ config.sequential_autograb }}</span><br>
     {% if !config.ignore_torrents.is_empty() %}
     <span class=key>ignore_torrents</span> = {{ self::yaml_nums(config.ignore_torrents) }}<br>
     {% endif %}
@@ -95,6 +96,15 @@
     {% endif %}
     {% if let Some(category) = autograb.category %}
     <span class=key>category</span> = <span class=string>{{ category | json }}</span><br>
+    {% endif %}
+    {% if let Some(label) = autograb.label %}
+    <span class=key>label</span> = <span class=string>{{ label | json }}</span><br>
+    {% endif %}
+    {% if let Some(max_pages) = autograb.max_pages %}
+    <span class=key>max_pages</span> = <span class=num>{{ max_pages }}</span><br>
+    {% endif %}
+    {% if autograb.mark_removed %}
+    <span class=key>mark_removed</span> = <span class=num>{{ autograb.mark_removed }}</span><br>
     {% endif %}
   </div>
 </div>

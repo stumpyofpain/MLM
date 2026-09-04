@@ -74,6 +74,9 @@ pub struct Config {
     #[serde(default)]
     #[serde(rename = "library")]
     pub libraries: Vec<Library>,
+
+    #[serde(default = "default_sequential_autograb")]
+    pub sequential_autograb: bool,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -116,6 +119,7 @@ pub struct TorrentSearch {
     #[serde(default)]
     pub mark_removed: bool,
     pub category: Option<String>,
+    pub label: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -385,4 +389,8 @@ fn default_music_types() -> Vec<String> {
 
 fn default_radio_types() -> Vec<String> {
     ["mp3"].iter().map(ToString::to_string).collect()
+}
+
+fn default_sequential_autograb() -> bool {
+    false
 }
