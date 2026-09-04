@@ -7,7 +7,7 @@ edition = "2024"
 anyhow = "1.0.100"
 bytes = "1.11.0"
 cookie = "0.18.1"
-itertools = "0.14.0"
+itertools = "0.15.0"
 mlm_db = { path = "../mlm_db" }
 mlm_parse = { path = "../mlm_parse" }
 native_db = { git = "https://github.com/vincent-herlemont/native_db.git", rev = "cddaafe0f6863146fd0879cae88fdb613bc50b47" }

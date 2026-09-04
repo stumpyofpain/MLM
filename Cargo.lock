@@ -1351,9 +1351,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
 dependencies = [
  "either",
 ]
@@ -1549,7 +1549,7 @@ dependencies = [
 
 [[package]]
 name = "mlm"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "askama",
@@ -1563,7 +1563,7 @@ dependencies = [
  "file-id",
  "futures",
  "htmlentity",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "lava_torrent",
  "log",
  "matchr",
@@ -1611,7 +1611,7 @@ name = "mlm_db"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "matchr",
  "mlm_parse",
  "native_db",
@@ -1634,7 +1634,7 @@ dependencies = [
  "anyhow",
  "bytes",
  "cookie",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "mlm_db",
  "mlm_parse",
  "native_db",
