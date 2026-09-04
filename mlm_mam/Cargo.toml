@@ -11,7 +11,7 @@ itertools = "0.14.0"
 mlm_db = { path = "../mlm_db" }
 mlm_parse = { path = "../mlm_parse" }
 native_db = { git = "https://github.com/vincent-herlemont/native_db.git", rev = "cddaafe0f6863146fd0879cae88fdb613bc50b47" }
-native_model = "0.4.20"
+native_model = "0.6.2"
 once_cell = "1.21.3"
 reqwest = "0.12.20"
 reqwest_cookie_store = "0.8.0"
