@@ -47,7 +47,6 @@ use tokio::{
     time::sleep,
 };
 use torrent_downloader::grab_selected_torrents;
-use tracing::error;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{
     EnvFilter, Layer as _, fmt::time::LocalTime, layer::SubscriberExt as _,
@@ -315,7 +314,7 @@ async fn app_main() -> Result<()> {
                     // 2. Danach alle Autograbber sequenziell von 0 bis N durchgehen
                     for (i, grab) in config.autograbs.iter().enumerate() {
                         let grab = Arc::new(grab.clone());
-                        info!("--> Running sequential autograbber [{i}]: {}", name);
+                        info!("--> Running sequential autograbber [{i}]");
 
                         stats
                             .update(|stats| {

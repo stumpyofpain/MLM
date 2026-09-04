@@ -41,6 +41,12 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked <<EOF
   touch /app/server/src/main.rs
   cargo build --release
 EOF
+# RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+#   touch /app/mlm_db/src/lib.rs \
+#   /app/mlm_mam/src/lib.rs \
+#   /app/mlm_parse/src/lib.rs \
+#   /app/server/src/main.rs && \
+#   cargo build --release
 
 CMD ["/app/target/release/mlm"]
 
