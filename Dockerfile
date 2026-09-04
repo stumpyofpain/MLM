@@ -3,7 +3,7 @@
 # The above line is so we can use can use heredocs in Dockerfiles. No more && and \!
 # https://www.docker.com/blog/introduction-to-heredocs-in-dockerfiles/
 
-FROM rust:1.91 AS build
+FROM rust:1.98 AS build
 
 RUN cargo new --lib app/mlm_db
 RUN cargo new --lib app/mlm_mam
