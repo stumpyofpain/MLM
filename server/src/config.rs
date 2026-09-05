@@ -75,7 +75,7 @@ pub struct Config {
     #[serde(rename = "library")]
     pub libraries: Vec<Library>,
 
-    #[serde(default = "default_sequential_autograb")]
+    #[serde(default = "sequential_autograb")]
     pub sequential_autograb: bool,
 }
 
