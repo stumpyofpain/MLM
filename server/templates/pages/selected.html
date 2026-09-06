@@ -54,6 +54,14 @@
         <input type=checkbox name=show {% if show.grabber %}checked{% endif %} value="grabber">
       </label>
       <label>
+        Grabber ID
+        <input type=checkbox name=show {% if show.grabber_id %}checked{% endif %} value="grabber_id">
+      </label>
+      <label>
+        Grabber Label
+        <input type=checkbox name=show {% if show.grabber_label %}checked{% endif %} value="grabber_label">
+      </label>
+      <label>
         Added At
         <input type=checkbox name=show {% if show.created_at %}checked{% endif %} value="created_at">
       </label>
@@ -103,6 +111,8 @@
   {{ table_header_s(Some(SelectedPageSort::Cost), "Cost", 80) }}
   {{ table_header_s(Some(SelectedPageSort::Buffer), "Required Unsats", 80) }}
   {{ table_header_if(show.grabber, Some(SelectedPageSort::Grabber), "Grabber", 130) }}
+  {{ table_header_if(show.grabber_id, Some(SelectedPageSort::GrabberId), "Grabber ID", 100) }}
+  {{ table_header_if(show.grabber_label, Some(SelectedPageSort::GrabberLabel), "Grabber Label", 150) }}
   {{ table_header_if(show.created_at, Some(SelectedPageSort::CreatedAt), "Added At", 157) }}
   {{ table_header_if(show.started_at, Some(SelectedPageSort::StartedAt), "Started At", 157) }}
   {{ table_header_if(show.removed_at, None, "Removed At", 157) }}
@@ -154,6 +164,26 @@
       {{ item(SelectedPageFilter::Grabber, &label) }}
     {% else if let Some(grabber) = torrent.grabber %}
       {{ item(SelectedPageFilter::Grabber, &grabber) }}
+    {% else %}
+      -
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if show.grabber_id %}
+  <div>
+    {% if let Some(id) = torrent.grabber_id %}
+      {{ id }}
+    {% else %}
+      -
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if show.grabber_label %}
+  <div>
+    {% if let Some(label) = torrent.grabber_label %}
+      {{ label }}
     {% else %}
       -
     {% endif %}
