@@ -171,6 +171,8 @@ pub async fn duplicate_torrents_page_post(
                         title_search,
                         meta,
                         grabber: None,
+                        grabber_id: None,
+                        grabber_label: None,
                         created_at: Timestamp::now(),
                         started_at: None,
                         removed_at: None,

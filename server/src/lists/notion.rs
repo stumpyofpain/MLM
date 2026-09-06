@@ -78,6 +78,7 @@ pub async fn run_notion_import(
                         &mam,
                         [torrent].into_iter(),
                         &grab.filter,
+                        None,
                         grab.cost,
                         list.unsat_buffer,
                         list.wedge_buffer,

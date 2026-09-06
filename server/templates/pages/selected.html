@@ -149,7 +149,15 @@
   <div>{{ item(SelectedPageFilter::Cost, torrent.cost.as_str()) }}</div>
   <div>{{ torrent.unsat_buffer.unwrap_or(*unsat_buffer) }}</div>
   {% if show.grabber %}
-  <div>{{ item(SelectedPageFilter::Grabber, &torrent.grabber.clone().unwrap_or_default()) }}</div>
+  <div>
+    {% if let Some(label) = torrent.grabber_label %}
+      {{ item(SelectedPageFilter::Grabber, &label) }}
+    {% else if let Some(grabber) = torrent.grabber %}
+      {{ item(SelectedPageFilter::Grabber, &grabber) }}
+    {% else %}
+      -
+    {% endif %}
+  </div>
   {% endif %}
   {% if show.created_at %}
   <div>{{ self::time(torrent.created_at) }}</div>

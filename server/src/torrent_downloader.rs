@@ -31,7 +31,7 @@ pub async fn grab_selected_torrents(
     qbit_url: &str,
     mam: &MaM<'_>,
 ) -> Result<()> {
-    let selected_torrents = {
+    let mut selected_torrents = {
         let r = db.r_transaction()?;
         r.scan()
             .primary::<SelectedTorrent>()?
@@ -39,6 +39,9 @@ pub async fn grab_selected_torrents(
             .filter(|t| t.as_ref().is_ok_and(|t| t.removed_at.is_none()))
             .collect::<Result<Vec<_>, native_db::db_type::Error>>()
     }?;
+    // TORRENTS NACH GRABBER-ID SORTIEREN
+    selected_torrents.sort_by_key(|t| t.grabber_id.unwrap_or(u64::MAX));
+
     if selected_torrents.is_empty() {
         trace!("no selected torrents");
         return Ok(());

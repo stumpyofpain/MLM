@@ -165,7 +165,7 @@ pub struct IndexPageForm {
 }
 
 impl TorrentFilter {
-    fn display_name(&self, i: usize) -> String {
+    pub fn display_name(&self, i: usize) -> String {
         self.name.clone().unwrap_or_else(|| format!("{i}"))
     }
 }

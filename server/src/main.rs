@@ -299,19 +299,42 @@ async fn app_main() -> Result<()> {
             let mam = mam.clone();
             let downloader_tx = downloader_tx.clone();
             let stats = stats.clone();
-
+            let mut search_rx_task = search_rx.clone();
+            
             tokio::spawn(async move {
                 loop {
-                    // 1. Erst die Wartezeit abwarten (oder auf "run now" von einem beliebigen Autograbber reagieren)
-                    info!("Starting sequential cycle for {} autograbbers...", config.autograbs.len());
+                    // 1. ZUERST WARTEN (Intervall oder manuelle Auslösung)
                     let interval = config.search_interval;
                     if interval > 0 {
-                        // Wir warten auf das globale Intervall
-                        // (oder bis ein "run now" Signal eingeht)
-                        sleep(Duration::from_secs(60 * interval)).await;
+                        info!("Waiting for next interval ({} min) or manual trigger...", interval);
+
+                        let mut rx_futures = Vec::new();
+                        for (idx, rx) in search_rx_task.iter_mut() {
+                            let mut rx_clone = rx.clone();
+                            rx_futures.push(Box::pin(async move {
+                                rx_clone.mark_unchanged();
+                                let _ = rx_clone.changed().await;
+                                *idx
+                            }));
+                        }
+
+                        if !rx_futures.is_empty() {
+                            tokio::select! {
+                                _ = sleep(Duration::from_secs(60 * interval)) => {
+                                    info!("Reguläres Intervall abgelaufen. Starte durch...");
+                                }
+                                (triggered_idx, _, _) = futures::future::select_all(rx_futures) => {
+                                    info!("Manuelles Trigger-Signal für Autograbber [{triggered_idx}] empfangen!");
+                                }
+                            }
+                        } else {
+                            sleep(Duration::from_secs(60 * interval)).await;
+                        }
                     }
 
-                    // 2. Danach alle Autograbber sequenziell von 0 bis N durchgehen
+                    // 2. ERST DANACH DIE SUCHE AUSFÜHREN
+                    info!("Starting sequential cycle for {} autograbbers...", config.autograbs.len());
+
                     for (i, grab) in config.autograbs.iter().enumerate() {
                         let grab = Arc::new(grab.clone());
                         info!("--> Running sequential autograbber [{i}]");
@@ -353,8 +376,9 @@ async fn app_main() -> Result<()> {
                             warn!("Stopping remaining sequential autograbbers due to account block/limit.");
                             break;
                         }
-                        info!("Finished sequential cycle. Sleeping for {} minutes...", interval);
                     }
+
+                    info!("Finished sequential cycle.");
                 }
             });
 

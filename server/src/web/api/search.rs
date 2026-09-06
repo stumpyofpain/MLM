@@ -94,6 +94,7 @@ pub async fn search_api_post(
             &mam,
             torrents.into_iter(),
             &search.filter,
+            None,
             search.cost,
             search.unsat_buffer,
             search.wedge_buffer,
