@@ -256,6 +256,7 @@ async fn search_item(
             list.dry_run,
             max_torrents,
             item.book_id,
+            None,
         )
         .await
         .context("select_torrents")?;
@@ -275,6 +276,7 @@ async fn search_item(
             list.dry_run,
             max_torrents,
             item.book_id,
+            None,
         )
         .await
         .context("select_torrents")?;

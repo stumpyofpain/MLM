@@ -102,6 +102,7 @@ pub async fn search_api_post(
             search.dry_run,
             u64::MAX,
             None,
+            None,
         )
         .await?;
         return Ok::<_, AppError>(Json(SearchApiResponse {

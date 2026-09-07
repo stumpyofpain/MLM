@@ -96,6 +96,7 @@ pub async fn run_autograbber(
             },
             &mam,
             max_torrents,
+            Some(index),
         )
         .await
         .context("search_torrents")?;
@@ -116,6 +117,7 @@ pub async fn search_and_select_torrents(
     fields: SearchFields,
     mam: &MaM<'_>,
     max_torrents: u64,
+    index: Option<usize>,
 ) -> Result<u64> {
     let torrents = search_torrents(torrent_search, fields, mam)
         .await
@@ -133,7 +135,7 @@ pub async fn search_and_select_torrents(
             mam,
             torrents.into_iter(),
             &torrent_search.filter,
-            None,
+            index,
             torrent_search.cost,
             torrent_search.unsat_buffer,
             torrent_search.wedge_buffer,
@@ -141,6 +143,7 @@ pub async fn search_and_select_torrents(
             torrent_search.dry_run,
             max_torrents,
             None,
+            torrent_search.label.clone(),
         )
         .await
         .context("select_torrents");
@@ -152,7 +155,7 @@ pub async fn search_and_select_torrents(
         mam,
         torrents,
         &torrent_search.filter,
-        None,
+        index,
         torrent_search.cost,
         torrent_search.unsat_buffer,
         torrent_search.wedge_buffer,
@@ -160,6 +163,7 @@ pub async fn search_and_select_torrents(
         torrent_search.dry_run,
         max_torrents,
         None,
+        torrent_search.label.clone(),
     )
     .await
     .context("select_torrents")
@@ -352,6 +356,7 @@ pub async fn select_torrents<T: Iterator<Item = MaMTorrent>>(
     dry_run: bool,
     max_torrents: u64,
     goodreads_id: Option<u64>,
+    search_label: Option<String>,
 ) -> Result<u64> {
     let mut selected_torrents = 0;
     'torrent: for torrent in torrents {
@@ -593,6 +598,12 @@ pub async fn select_torrents<T: Iterator<Item = MaMTorrent>>(
             "Selecting torrent \"{}\" in format {}, cost: {:?}, with category {:?} and tags {:?}",
             torrent.title, torrent.filetype, cost, category, tags
         );
+        let display_name = search_label
+            .clone()
+            .or_else(|| grabber.label.clone())
+            .or_else(|| grabber.name.clone())
+            .or_else(|| index.map(|i| i.to_string()));
+
         if let Some((_, rw)) = &rw_opt {
             selected_torrents += 1;
             rw.insert(mlm_db::SelectedTorrent {
@@ -610,9 +621,9 @@ pub async fn select_torrents<T: Iterator<Item = MaMTorrent>>(
                 tags,
                 title_search,
                 meta,
-                grabber: grabber.name.clone(),
+                grabber: display_name.clone(),
                 grabber_id: index.map(|i| i as u64),
-                grabber_label: index.map(|i| grabber.display_name(i)),
+                grabber_label: display_name,
                 created_at: Timestamp::now(),
                 started_at: None,
                 removed_at: None,

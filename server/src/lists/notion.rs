@@ -86,6 +86,7 @@ pub async fn run_notion_import(
                         list.dry_run,
                         max_torrents,
                         None,
+                        None,
                     )
                     .await
                     .context("select_torrents")?;

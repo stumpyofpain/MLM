@@ -204,12 +204,20 @@ pub fn migrate(db: &Database<'_>) -> Result<()> {
     let rw = db.rw_transaction()?;
 
     info!("Migrations started");
+    info!("Migrating Torrent...");
     rw.migrate::<Torrent>()?;
-    rw.migrate::<SelectedTorrent>()?;
+    info!("Migrating SelectedTorrent...");
+    if let Err(err) = rw.migrate::<SelectedTorrent>() {
+    info!("Standard migration failed for SelectedTorrent ({err}), falling back to recover_migrate...");
+    recover_migrate::<v17::SelectedTorrent, v18::SelectedTorrent>(&rw)?;
+    }
+    info!("Migrating DuplicateTorrent...");
     rw.migrate::<DuplicateTorrent>()?;
     // recover_migrate::<v02::ErroredTorrent, v03::ErroredTorrent>(&rw)?;
+    info!("Migrating ErroredTorrent...");
     rw.migrate::<ErroredTorrent>()?;
     // recover_migrate::<v03::Event, v04::Event>(&rw)?;
+    info!("Migrating Event...");
     rw.migrate::<Event>()?;
     rw.migrate::<List>()?;
     rw.migrate::<ListItem>()?;

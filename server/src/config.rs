@@ -213,6 +213,7 @@ pub struct TagFilter {
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TorrentFilter {
+    pub label: Option<String>,
     #[serde(default)]
     pub name: Option<String>,
 
