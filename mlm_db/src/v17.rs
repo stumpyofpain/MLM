@@ -52,12 +52,10 @@ pub struct SelectedTorrent {
     pub title_search: String,
     pub meta: TorrentMeta,
     pub grabber: Option<String>,
-    pub grabber_id: Option<u64>,
-    pub grabber_label: Option<String>,
     pub created_at: v03::Timestamp,
     pub started_at: Option<v03::Timestamp>,
     pub removed_at: Option<v03::Timestamp>,
-}
+}    
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[native_model(id = 4, version = 17, from = v16::DuplicateTorrent)]
@@ -213,8 +211,6 @@ impl From<v16::SelectedTorrent> for SelectedTorrent {
             title_search: normalize_title(&meta.title),
             meta,
             grabber: t.grabber,
-            grabber_id: None,
-            grabber_label: None,
             created_at: t.created_at,
             started_at: t.started_at,
             removed_at: t.removed_at,

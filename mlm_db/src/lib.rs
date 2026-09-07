@@ -16,6 +16,7 @@ mod v14;
 mod v15;
 mod v16;
 mod v17;
+mod v18;
 
 use std::collections::HashMap;
 
@@ -32,6 +33,12 @@ use tracing::{info, instrument};
 pub static MODELS: Lazy<Models> = Lazy::new(|| {
     let mut models = Models::new();
     models.define::<v01::Config>().unwrap();
+
+    models.define::<v18::Torrent>().unwrap();
+    models.define::<v18::SelectedTorrent>().unwrap();
+    models.define::<v18::DuplicateTorrent>().unwrap();
+    models.define::<v18::ErroredTorrent>().unwrap();
+    models.define::<v18::Event>().unwrap();
 
     models.define::<v17::Torrent>().unwrap();
     models.define::<v17::SelectedTorrent>().unwrap();
@@ -130,25 +137,25 @@ pub static MODELS: Lazy<Models> = Lazy::new(|| {
 });
 
 pub type Config = v01::Config;
-pub type Torrent = v17::Torrent;
-pub type TorrentKey = v17::TorrentKey;
-pub type SelectedTorrent = v17::SelectedTorrent;
-pub type SelectedTorrentKey = v17::SelectedTorrentKey;
-pub type DuplicateTorrent = v17::DuplicateTorrent;
-pub type ErroredTorrent = v17::ErroredTorrent;
-pub type ErroredTorrentKey = v17::ErroredTorrentKey;
+pub type Torrent = v18::Torrent;
+pub type TorrentKey = v18::TorrentKey;
+pub type SelectedTorrent = v18::SelectedTorrent;
+pub type SelectedTorrentKey = v18::SelectedTorrentKey;
+pub type DuplicateTorrent = v18::DuplicateTorrent;
+pub type ErroredTorrent = v18::ErroredTorrent;
+pub type ErroredTorrentKey = v18::ErroredTorrentKey;
 pub type ErroredTorrentId = v11::ErroredTorrentId;
-pub type Event = v17::Event;
-pub type EventKey = v17::EventKey;
-pub type EventType = v17::EventType;
+pub type Event = v18::Event;
+pub type EventKey = v18::EventKey;
+pub type EventType = v18::EventType;
 pub type List = v05::List;
 pub type ListKey = v05::ListKey;
 pub type ListItem = v05::ListItem;
 pub type ListItemKey = v05::ListItemKey;
 pub type ListItemTorrent = v04::ListItemTorrent;
-pub type TorrentMeta = v17::TorrentMeta;
-pub type TorrentMetaDiff = v17::TorrentMetaDiff;
-pub type TorrentMetaField = v17::TorrentMetaField;
+pub type TorrentMeta = v18::TorrentMeta;
+pub type TorrentMetaDiff = v18::TorrentMetaDiff;
+pub type TorrentMetaField = v18::TorrentMetaField;
 pub type VipStatus = v11::VipStatus;
 pub type MetadataSource = v10::MetadataSource;
 pub type OldDbMainCat = v01::MainCat;
