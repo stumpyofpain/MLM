@@ -107,9 +107,12 @@ pub struct SelectedTorrent {
     pub created_at: v03::Timestamp,
     pub started_at: Option<v03::Timestamp>,
     pub removed_at: Option<v03::Timestamp>,
+    #[serde(default)]
     pub grabber_id: Option<u64>,
+    #[serde(default)]
     pub grabber_label: Option<String>,
 }
+
 
 impl From<v17::SelectedTorrent> for SelectedTorrent {
     fn from(t: v17::SelectedTorrent) -> Self {
