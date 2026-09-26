@@ -376,6 +376,8 @@ async fn app_main() -> Result<()> {
                             warn!("Stopping remaining sequential autograbbers due to account block/limit.");
                             break;
                         }
+                        // Kurze Pause nach jedem Grabber, um dem Downloader & API Zeit zu geben und unter dem Unsatisfied Request Limit zu bleiben
+                        sleep(Duration::from_secs(20)).await;
                     }
 
                     info!("Finished sequential cycle.");
