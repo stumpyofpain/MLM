@@ -1,6 +1,6 @@
 [package]
 name = "mlm"
-version = "0.5.1"
+version = "0.5.1-a"
 edition = "2024"
 
 [package.metadata.packager]

@@ -37,6 +37,7 @@ pub async fn index_page(
         mam_error: context.mam.as_ref().as_ref().err().map(|e| format!("{e}")),
         has_no_qbits: config.qbittorrent.is_empty(),
         username,
+        version: env!("CARGO_PKG_VERSION"),
         autograbber_run_at: stats
             .autograbber_run_at
             .iter()
@@ -154,6 +155,7 @@ struct IndexPageTemplate {
     downloader_result: Option<Result<(), String>>,
     audiobookshelf_run_at: Option<Timestamp>,
     audiobookshelf_result: Option<Result<(), String>>,
+    version: &'static str,
 }
 
 impl Page for IndexPageTemplate {}
