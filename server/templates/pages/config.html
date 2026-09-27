@@ -98,7 +98,7 @@
     <span class=key>category</span> = <span class=string>{{ category | json }}</span><br>
     {% endif %}
     {% if let Some(label) = autograb.label %}
-    <span class=key>label</span> = <span class=string>{{ label | json }}</span><br>
+    <span class=key>label</span> = <span class=string>{{ label | safe}}</span><br>
     {% endif %}
     {% if let Some(max_pages) = autograb.max_pages %}
     <span class=key>max_pages</span> = <span class=num>{{ max_pages }}</span><br>
