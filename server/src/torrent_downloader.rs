@@ -130,7 +130,8 @@ pub async fn grab_selected_torrents(
             break;
         }
 
-        sleep(Duration::from_millis(1000)).await;
+        sleep(Duration::from_millis(5000)).await;
+        debug!("Testing 5 second sleep after grabbing a torrent to avoid rate limiting");
     }
     Ok(())
 }
@@ -172,6 +173,8 @@ async fn grab_torrent(
         } else {
             false
         };
+    sleep(Duration::from_secs(1)).await;
+    debug!("Testing 1 second sleep before grabbing a torrent to avoid rate limiting");
     let (torrent_file_bytes, torrent_file) =
         fetch_torrent_file(db, mam, &torrent, will_wedge).await?;
     let hash = torrent_file.info_hash();

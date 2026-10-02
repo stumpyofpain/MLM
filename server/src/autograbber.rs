@@ -298,7 +298,8 @@ pub async fn search_torrents(
         if page >= max_pages || results.data.len() >= results.found {
             break;
         }
-        sleep(Duration::from_millis(400)).await;
+        sleep(Duration::from_millis(2000)).await;
+        debug!("Testing 2 second sleep after grabbing a page of torrents to avoid rate limiting");
     }
 
     let torrents = results
@@ -336,7 +337,8 @@ pub async fn mark_removed_torrents(
                         drop(guard);
                         write_event(db, Event::new(tid, Some(id), EventType::RemovedFromMam)).await;
                     }
-                    sleep(Duration::from_millis(400)).await;
+                    sleep(Duration::from_millis(2000)).await;
+                    debug!("Testing 2 second sleep after grabbing a page of torrents to avoid rate limiting");
                 }
             }
         }
@@ -637,6 +639,8 @@ pub async fn select_torrents<T: Iterator<Item = MaMTorrent>>(
                 break;
             }
         }
+        sleep(Duration::from_millis(1000)).await;
+        debug!("Testing 1 second sleep after selecting a torrent to avoid rate limiting");
     }
 
     Ok(selected_torrents)
@@ -809,6 +813,8 @@ async fn update_selected_torrent_meta(
             .map(|field| format!("  {}: {} -> {}", field.field, field.from, field.to))
             .join("\n")
     );
+    sleep(Duration::from_millis(1000)).await;
+    debug!("Testing 1 second sleep before grabbing a torrent to avoid rate limiting");
     let hash = get_mam_torrent_hash(mam, &torrent.dl_link, torrent.mam_id)
         .await
         .ok();
