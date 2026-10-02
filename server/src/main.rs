@@ -303,28 +303,33 @@ async fn app_main() -> Result<()> {
             
             tokio::spawn(async move {
                 loop {
-                    // 1. ZUERST WARTEN (Intervall oder manuelle Auslösung)
+                    // 1. WARTEN AUF SIGNAL ODER INTERVALL
                     let interval = config.search_interval;
+                    let mut target_grabber: Option<usize> = None; // Welcher Grabber soll laufen?
+
                     if interval > 0 {
                         info!("Waiting for next interval ({} min) or manual trigger...", interval);
 
                         let mut rx_futures = Vec::new();
-                        for (idx, rx) in search_rx_task.iter_mut() {
+                        for (&idx, rx) in search_rx_task.iter_mut() {
                             let mut rx_clone = rx.clone();
                             rx_futures.push(Box::pin(async move {
-                                rx_clone.mark_unchanged();
+                                // Wichtig: Auf Änderung warten und Kanal als 'gesehen' markieren
                                 let _ = rx_clone.changed().await;
-                                *idx
+                                rx_clone.borrow_and_update(); 
+                                idx
                             }));
                         }
 
                         if !rx_futures.is_empty() {
                             tokio::select! {
                                 _ = sleep(Duration::from_secs(60 * interval)) => {
-                                    info!("Reguläres Intervall abgelaufen. Starte durch...");
+                                    info!("Reguläres Intervall abgelaufen. Starte kompletten Durchlauf...");
+                                    target_grabber = None; // None = Alle Grabber nacheinander durchlaufen
                                 }
                                 (triggered_idx, _, _) = futures::future::select_all(rx_futures) => {
                                     info!("Manuelles Trigger-Signal für Autograbber [{triggered_idx}] empfangen!");
+                                    target_grabber = Some(triggered_idx); // Nur diesen (oder ab diesem) ausführen
                                 }
                             }
                         } else {
@@ -332,10 +337,17 @@ async fn app_main() -> Result<()> {
                         }
                     }
 
-                    // 2. ERST DANACH DIE SUCHE AUSFÜHREN
-                    info!("Starting sequential cycle for {} autograbbers...", config.autograbs.len());
+                    // 2. AUSFÜHRUNG DER SUCHE
+                    // Wenn ein gezielter Trigger kam, filtern wir die Liste auf genau diesen Grabber (oder alle, falls Intervall)
+                    let grabs_to_run: Vec<(usize, _)> = config.autograbs
+                        .iter()
+                        .enumerate()
+                        .filter(|(i, _)| target_grabber.map_or(true, |target| *i == target))
+                        .collect();
 
-                    for (i, grab) in config.autograbs.iter().enumerate() {
+                    info!("Starting cycle for {} autograbber(s)...", grabs_to_run.len());
+
+                    for (i, grab) in grabs_to_run {
                         let grab = Arc::new(grab.clone());
                         info!("--> Running sequential autograbber [{i}]");
 
@@ -360,7 +372,7 @@ async fn app_main() -> Result<()> {
                         .context("autograbbers");
 
                         let is_blocked = if let Err(err) = &result {
-                            error!("Error running autograbbers: {err:?}");
+                            error!("Error running autograbber [{i}]: {err:?}");
                             err.chain().any(|e| e.downcast_ref::<AccountBlockedError>().is_some())
                         } else {
                             false
@@ -373,16 +385,17 @@ async fn app_main() -> Result<()> {
                             .await;
 
                         if is_blocked {
-                            warn!("Stopping remaining sequential autograbbers due to account block/limit.");
+                            warn!("Stopping remaining autograbbers due to account block/limit.");
                             break;
                         }
-                        // Kurze Pause nach jedem Grabber, um dem Downloader & API Zeit zu geben und unter dem Unsatisfied Request Limit zu bleiben
+
                         sleep(Duration::from_secs(20)).await;
                     }
 
-                    info!("Finished sequential cycle.");
+                    info!("Finished cycle.");
                 }
             });
+
 
         } else {
             for (i, grab) in config.autograbs.iter().enumerate() {
