@@ -52,29 +52,47 @@ pub async fn run_autograbber(
     let _guard = AUTOGRABBER_MUTEX.lock().await;
 
     let user_info = mam.user_info().await?;
-    let max_torrents = user_info
-        .snatch_summary
-        .unsat
-        .limit
-        .saturating_sub(user_info.snatch_summary.unsat.count);
+    let unsat_limit = user_info.snatch_summary.unsat.limit; // z. B. 150
+    let unsat_count = user_info.snatch_summary.unsat.count; // z. B. 109
+    let unsat_buffer = autograb_config.unsat_buffer.unwrap_or(config.unsat_buffer);
+
     let name = autograb_config
         .filter
         .name
         .clone()
         .unwrap_or_else(|| index.to_string());
+
+    // Zähle ALLE lokal ausgewählten/aktiven Torrents (global über alle Grabber)
+    let r = db.r_transaction()?;
+    let local_active_torrents = r
+        .scan()
+        .primary::<SelectedTorrent>()?
+        .all()?
+        .filter(|t| {
+            t.as_ref()
+                .is_ok_and(|t| t.removed_at.is_none()) // Wichtig: KEIN Filter auf grabber == name
+        })
+        .count() as u64;
+
+    // Maximal erlaubtes Ziel berechnen (Limit minus Puffer, z. B. 150 - 2 = 148)
+    let effective_limit = unsat_limit.saturating_sub(unsat_buffer);
+
+    // Tatsächliche Belegung = MaM Unsats + Lokale Downloads, die MaM evtl. noch nicht sieht
+    let current_total = unsat_count.saturating_add(local_active_torrents);
+
+    // Verbleibende Kapazität für Unsat-Downloads
+    let mut max_torrents = effective_limit.saturating_sub(current_total);
+
     debug!(
-        "autograbber {}, unsats: {:#?}; max_torrents: {max_torrents}",
-        name, user_info.snatch_summary.unsat
+        "autograbber {}, unsats (MAM): {}, local active: {}, effective_limit: {}, max_torrents: {}",
+        name, unsat_count, local_active_torrents, effective_limit, max_torrents
     );
 
-    let unsat_buffer = autograb_config.unsat_buffer.unwrap_or(config.unsat_buffer);
-    let mut max_torrents = max_torrents.saturating_sub(unsat_buffer);
-
+    // `max_active_downloads` PRO GRABBER prüfen
     if max_torrents > 0
         && let Some(max_active_downloads) = autograb_config.max_active_downloads
     {
-        let r = db.r_transaction()?;
-        let downloading_torrents = r
+        let downloading_for_this_grabber = r
             .scan()
             .primary::<SelectedTorrent>()?
             .all()?
@@ -83,7 +101,8 @@ pub async fn run_autograbber(
                     .is_ok_and(|t| t.grabber.as_ref() == Some(&name) && t.removed_at.is_none())
             })
             .count() as u64;
-        max_torrents = max_torrents.min(max_active_downloads.saturating_sub(downloading_torrents));
+
+        max_torrents = max_torrents.min(max_active_downloads.saturating_sub(downloading_for_this_grabber));
     }
 
     if max_torrents > 0
