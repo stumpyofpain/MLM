@@ -10,6 +10,7 @@ use std::{
     path::{Component, Path, PathBuf},
     sync::Arc,
 };
+use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use file_id::get_file_id;
@@ -28,6 +29,8 @@ use qbit::{
 };
 use regex::Regex;
 use tokio::fs::create_dir_all;
+use tokio::time::timeout;
+
 use tracing::{Level, debug, instrument, span, trace, warn};
 
 use crate::{
@@ -97,7 +100,22 @@ pub async fn link_torrents_to_library(
                 rw.commit()?;
             }
             if t.client_status.is_none() {
-                let trackers = qbit.1.trackers(&torrent.hash).await?;
+                //let trackers = qbit.1.trackers(&torrent.hash).await?;
+                let trackers = match timeout(
+                    Duration::from_secs(15), 
+                    qbit.1.trackers(&torrent.hash)
+                ).await {
+                    Ok(Ok(t)) => t,
+                    Ok(Err(err)) => {
+                        warn!("qBittorrent API-Fehler bei Tracker-Abfrage: {err}");
+                        continue;
+                    }
+                    Err(_) => {
+                        warn!("Timeout (>15s) beim Warten auf qBittorrent für Hash {}", torrent.hash);
+                        continue; // Überspringt diesen Torrent in diesem Durchlauf, statt abzustürzen
+                    }
+                };
+
                 if let Some(mam_tracker) = trackers.last()
                     && mam_tracker.msg == "torrent not registered with this tracker"
                 {
