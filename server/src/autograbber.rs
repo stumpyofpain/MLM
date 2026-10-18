@@ -69,8 +69,11 @@ pub async fn run_autograbber(
         .primary::<SelectedTorrent>()?
         .all()?
         .filter(|t| {
-            t.as_ref()
-                .is_ok_and(|t| t.removed_at.is_none()) // Wichtig: KEIN Filter auf grabber == name
+            t.as_ref().is_ok_and(|t| {
+                t.removed_at.is_none() 
+                // Nur mitzählen, wenn er bereits gestartet wurde (also nicht nur in der Queue hängt)
+                && t.started_at.is_some() 
+            })
         })
         .count() as u64;
 
